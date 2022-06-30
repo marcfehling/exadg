@@ -46,12 +46,12 @@ Driver<dim, Number>::Driver(MPI_Comm const &                              comm,
 
 template<int dim, typename Number>
 void
-Driver<dim, Number>::setup()
+Driver<dim, Number>::initialize()
 {
   dealii::Timer timer;
   timer.restart();
 
-  pcout << std::endl << "Setting up incompressible flow with scalar transport solver:" << std::endl;
+  pcout << std::endl << "Initializing incompressible flow with scalar transport solver:" << std::endl;
 
   application->setup();
 
@@ -155,41 +155,13 @@ Driver<dim, Number>::setup()
         "Parameter use_cell_based_face_loops should be the same for fluid and scalar transport."));
   }
 
-  // setup Navier-Stokes operator
-  if(application->get_parameters().boussinesq_term)
-  {
-    // assume that the first scalar field with index 0 is the active scalar that
-    // couples to the incompressible Navier-Stokes equations
-    fluid_operator->setup(matrix_free, matrix_free_data, scalar_operator[0]->get_dof_name());
-  }
-  else
-  {
-    fluid_operator->setup(matrix_free, matrix_free_data);
-  }
-
-  // setup convection-diffusion operator
-  for(unsigned int i = 0; i < n_scalars; ++i)
-  {
-    scalar_operator[i]->setup(matrix_free,
-                              matrix_free_data,
-                              fluid_operator->get_dof_name_velocity());
-  }
-
-  // setup postprocessor
+  // initialize postprocessors
   fluid_postprocessor = application->create_postprocessor();
-  fluid_postprocessor->setup(*fluid_operator);
 
   for(unsigned int i = 0; i < n_scalars; ++i)
-  {
     scalar_postprocessor[i] = application->create_postprocessor_scalar(i);
-    std::shared_ptr<dealii::Mapping<dim> const> mapping =
-      get_dynamic_mapping<dim, Number>(application->get_grid(), grid_motion);
-    scalar_postprocessor[i]->setup(*scalar_operator[i], *mapping);
-  }
 
-  // setup time integrator before calling setup_solvers
-  // (this is necessary since the setup of the solvers
-  // depends on quantities such as the time_step_size or gamma0!!!)
+  // initialize time integrators
   if(application->get_parameters().solver_type == IncNS::SolverType::Unsteady)
   {
     fluid_time_integrator = IncNS::create_time_integrator<dim, Number>(
@@ -212,6 +184,79 @@ Driver<dim, Number>::setup()
     AssertThrow(false, dealii::ExcMessage("Not implemented."));
   }
 
+  for(unsigned int i = 0; i < n_scalars; ++i)
+  {
+    // initialize time integrator
+    scalar_time_integrator[i] =
+      ConvDiff::create_time_integrator<dim, Number>(scalar_operator[i],
+                                                    application->get_parameters_scalar(i),
+                                                    mpi_comm,
+                                                    is_test,
+                                                    scalar_postprocessor[i]);
+
+    if(application->get_parameters_scalar(i).restarted_simulation == false &&
+       application->get_parameters_scalar(i).temporal_discretization ==
+         ConvDiff::TemporalDiscretization::BDF)
+    {
+      // See comment above for fluid field.
+      AssertThrow(application->get_parameters_scalar(i).start_with_low_order == true,
+                  dealii::ExcMessage("start_with_low_order has to be true for this solver."));
+    }
+
+    // adaptive time stepping
+    if(application->get_parameters().adaptive_time_stepping == true)
+    {
+      use_adaptive_time_stepping = true;
+    }
+  }
+
+  timer_tree.insert({"Flow + transport", "Initialize"}, timer.wall_time());
+}
+
+template<int dim, typename Number>
+void
+Driver<dim, Number>::setup() const
+{
+  dealii::Timer timer;
+  timer.restart();
+
+  pcout << std::endl << "Setting up incompressible flow with scalar transport solver:" << std::endl;
+
+  // setup Navier-Stokes operator
+  if(application->get_parameters().boussinesq_term)
+  {
+    // assume that the first scalar field with index 0 is the active scalar that
+    // couples to the incompressible Navier-Stokes equations
+    fluid_operator->setup(matrix_free, matrix_free_data, scalar_operator[0]->get_dof_name());
+  }
+  else
+  {
+    fluid_operator->setup(matrix_free, matrix_free_data);
+  }
+
+  // setup convection-diffusion operator
+  unsigned int const n_scalars = application->get_n_scalars();
+
+  for(unsigned int i = 0; i < n_scalars; ++i)
+  {
+    scalar_operator[i]->setup(matrix_free,
+                              matrix_free_data,
+                              fluid_operator->get_dof_name_velocity());
+  }
+
+  // setup postprocessor
+  fluid_postprocessor->setup(*fluid_operator);
+
+  for(unsigned int i = 0; i < n_scalars; ++i)
+  {
+    std::shared_ptr<dealii::Mapping<dim> const> mapping =
+      get_dynamic_mapping<dim, Number>(application->get_grid(), grid_motion);
+    scalar_postprocessor[i]->setup(*scalar_operator[i], *mapping);
+  }
+
+  // setup time integrator before calling setup_solvers
+  // (this is necessary since the setup of the solvers
+  // depends on quantities such as the time_step_size or gamma0!!!)
   if(application->get_parameters().solver_type == IncNS::SolverType::Unsteady)
   {
     if(application->get_parameters().restarted_simulation == false)
@@ -249,33 +294,7 @@ Driver<dim, Number>::setup()
     AssertThrow(false, dealii::ExcMessage("Not implemented."));
   }
 
-  for(unsigned int i = 0; i < n_scalars; ++i)
-  {
-    // initialize time integrator
-    scalar_time_integrator[i] =
-      ConvDiff::create_time_integrator<dim, Number>(scalar_operator[i],
-                                                    application->get_parameters_scalar(i),
-                                                    mpi_comm,
-                                                    is_test,
-                                                    scalar_postprocessor[i]);
 
-    if(application->get_parameters_scalar(i).restarted_simulation == false &&
-       application->get_parameters_scalar(i).temporal_discretization ==
-         ConvDiff::TemporalDiscretization::BDF)
-    {
-      // See comment above for fluid field.
-      AssertThrow(application->get_parameters_scalar(i).start_with_low_order == true,
-                  dealii::ExcMessage("start_with_low_order has to be true for this solver."));
-    }
-
-    scalar_time_integrator[i]->setup(application->get_parameters_scalar(i).restarted_simulation);
-
-    // adaptive time stepping
-    if(application->get_parameters().adaptive_time_stepping == true)
-    {
-      use_adaptive_time_stepping = true;
-    }
-  }
 
   // setup solvers in case of BDF time integration (solution of linear systems of equations)
   for(unsigned int i = 0; i < n_scalars; ++i)
@@ -283,6 +302,8 @@ Driver<dim, Number>::setup()
     AssertThrow(application->get_parameters_scalar(i).analytical_velocity_field == false,
                 dealii::ExcMessage(
                   "An analytical velocity field can not be used for this coupled solver."));
+
+    scalar_time_integrator[i]->setup(application->get_parameters_scalar(i).restarted_simulation);
 
     if(application->get_parameters_scalar(i).temporal_discretization ==
        ConvDiff::TemporalDiscretization::BDF)

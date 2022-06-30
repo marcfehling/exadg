@@ -60,7 +60,10 @@ public:
          bool const                                    is_test);
 
   void
-  setup();
+  initialize();
+
+  void
+  setup() const;
 
   void
   solve() const;

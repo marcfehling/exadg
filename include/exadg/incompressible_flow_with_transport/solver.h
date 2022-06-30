@@ -71,6 +71,8 @@ run(std::string const & input_file, MPI_Comm const & mpi_comm, bool const is_tes
   std::shared_ptr<FTI::Driver<dim, Number>> driver =
     std::make_shared<FTI::Driver<dim, Number>>(mpi_comm, application, is_test);
 
+  driver->initialize();
+
   driver->setup();
 
   driver->solve();

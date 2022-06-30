@@ -210,6 +210,30 @@ Driver<dim, Number>::initialize()
     }
   }
 
+  // initialize amr
+  if(application->get_parameters().amr.refinement_type != RefinementType::None)
+  {
+    dealii::parallel::distributed::Triangulation<dim> *pd_triangulation = dynamic_cast<dealii::parallel::distributed::Triangulation<dim> *>(application->get_grid()->triangulation.get());
+
+    AssertThrow(pd_triangulation != nullptr, dealii::ExcMessage("AMR only implemented for parallel distributed Triangulation."));
+
+    // or choose temperature instead of pressure
+    grid_refinement = std::make_shared<GridRefinement<dim, VectorType>>
+    (/*amr_data=*/application->get_parameters().amr, /* is this correct? */
+     /*mapping=*/*application->get_grid()->mapping,
+     /*dof_handler=*/matrix_free_data->get_dof_handler("fluidpressure"),
+     /*face_quadrature_degree=*/matrix_free_data->get_quadrature_vector().at(matrix_free_data->get_quad_index("fluidpressure")).size() + 1,
+     /*solution=*/fluid_time_integrator->get_pressure(),
+     /*triangulation=*/*pd_triangulation);
+
+    // solution_transfer_velocity = std::make_shared<dealii::parallel::distributed::SolutionTransfer<dim, VectorType>>
+    // /*dof_handler=*/matrix_free_data->get_dof_handler("fluidvelocity"));
+    // solution_transfer_pressure = std::make_shared<dealii::parallel::distributed::SolutionTransfer<dim, VectorType>>
+    // (/*dof_handler=*/matrix_free_data->get_dof_handler("fluidpressure"));
+    // solution_transfer_temperature = std::make_shared<dealii::parallel::distributed::SolutionTransfer<dim, VectorType>>
+    // (/*dof_handler=*/matrix_free_data->get_dof_handler("temperature"));
+  }
+
   timer_tree.insert({"Flow + transport", "Initialize"}, timer.wall_time());
 }
 
@@ -634,6 +658,22 @@ Driver<dim, Number>::solve() const
 
     for(unsigned int i = 0; i < application->get_n_scalars(); ++i)
       finished = finished && scalar_time_integrator[i]->finished();
+
+    // refine mesh if not finished
+    if ((not finished) && (application->get_parameters().amr.refinement_type != RefinementType::None))
+    {
+      // solution_transfer_velocity->prepare_for_coarsening_and_refinement(dof-handler-u, vectors);
+      // solution_transfer_pressure->prepare_for_coarsening_and_refinement(dof_handler_p, vectors);
+      // solution_transfer_temperature->prepare_for_coarsening_and_refinement(dof_handler_?, temperature vectors?);
+
+      grid_refinement->estimate_mark_refine();
+
+      // solution_transfer_velocity->interpolate(dof-handler-u, vectors);
+      // solution_transfer_pressure->interpolate(dof_handler_p, vectors);
+      // solution_transfer_temperature->interpolate(dof_handler_?, vectors);
+
+      // TODO: update cfl condition?
+    }
 
     ++N_time_steps;
   }

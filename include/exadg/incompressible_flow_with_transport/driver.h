@@ -22,10 +22,15 @@
 #ifndef INCLUDE_EXADG_INCOMPRESSIBLE_FLOW_WITH_TRANSPORT_DRIVER_H_
 #define INCLUDE_EXADG_INCOMPRESSIBLE_FLOW_WITH_TRANSPORT_DRIVER_H_
 
+// deal.II
+#include <deal.II/distributed/solution_transfer.h>
+#include <deal.II/lac/la_parallel_vector.h>
+
 // application
 #include <exadg/incompressible_flow_with_transport/user_interface/application_base.h>
 
 // utilities
+#include <exadg/amr/grid_refinement.h>
 #include <exadg/functions_and_boundary_conditions/verify_boundary_conditions.h>
 #include <exadg/matrix_free/matrix_free_data.h>
 #include <exadg/utilities/print_functions.h>
@@ -122,6 +127,15 @@ private:
   typedef IncNS::DriverSteadyProblems<dim, Number> DriverSteady;
 
   std::shared_ptr<DriverSteady> fluid_driver_steady;
+
+  // amr
+  using VectorType = dealii::LinearAlgebra::distributed::Vector<Number>;
+
+  std::shared_ptr<GridRefinement<dim, VectorType>> grid_refinement;
+
+  // std::shared_ptr<dealii::parallel::distributed::SolutionTransfer<dim, VectorType>> solution_transfer_velocity;
+  // std::shared_ptr<dealii::parallel::distributed::SolutionTransfer<dim, VectorType>> solution_transfer_pressure;
+  // std::shared_ptr<dealii::parallel::distributed::SolutionTransfer<dim, VectorType>> solution_transfer_temperature;
 
   // SCALAR TRANSPORT
 

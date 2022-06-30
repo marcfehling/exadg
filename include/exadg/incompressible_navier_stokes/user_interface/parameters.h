@@ -26,6 +26,7 @@
 #include <deal.II/base/conditional_ostream.h>
 
 // ExaDG
+#include <exadg/amr/amr_data.h>
 #include <exadg/grid/enum_types.h>
 #include <exadg/grid/grid_data.h>
 #include <exadg/incompressible_navier_stokes/user_interface/enum_types.h>
@@ -279,6 +280,9 @@ public:
 
   // Grid data
   GridData grid;
+
+  // AMR data
+  AMRData amr;
 
   // Polynomial degree of velocity shape functions
   unsigned int degree_u;

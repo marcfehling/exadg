@@ -91,6 +91,9 @@ Parameters::Parameters()
     // grid
     grid(GridData()),
 
+    // amr
+    amr(AMRData()),
+
     // polynomial degrees
     degree_u(2),
     degree_p(DegreePressure::MixedOrder),

@@ -113,6 +113,11 @@ private:
     this->param.grid.mapping_degree     = 1;
     this->param.degree_p                = DegreePressure::MixedOrder;
 
+    // amr
+    this->param.amr.refinement_type = RefinementType::FixedNumber;
+    this->param.amr.refine_fraction = 0.;
+    this->param.amr.coarsen_fraction = 0.;
+
     // convective term
     if(this->param.formulation_convective_term == FormulationConvectiveTerm::DivergenceFormulation)
       this->param.upwind_factor = 0.5; // allows using larger CFL values for explicit formulations

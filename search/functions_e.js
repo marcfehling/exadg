@@ -1,7 +1,6 @@
 var searchData=
 [
-  ['_7egridmotioninterface_0',['~GridMotionInterface',['../classExaDG_1_1GridMotionInterface.html#ad5df404201def98d5cab4058456c9563',1,'ExaDG::GridMotionInterface']]],
-  ['_7emappingdofvector_1',['~MappingDoFVector',['../classExaDG_1_1MappingDoFVector.html#a70fc04b5bbe83adc68c35f1289a7a196',1,'ExaDG::MappingDoFVector']]],
-  ['_7epermutator_2',['~Permutator',['../classdealspectrum_1_1Permutator.html#a916c5f88e9231db447a5e7022a9cfb2a',1,'dealspectrum::Permutator']]],
-  ['_7espectralanalysis_3',['~SpectralAnalysis',['../classdealspectrum_1_1SpectralAnalysis.html#a061796e80030ee2628a40e0f5504d215',1,'dealspectrum::SpectralAnalysis']]]
+  ['valid_5fdeformation_0',['valid_deformation',['../classExaDG_1_1Structure_1_1NonLinearOperator.html#a5b6c5ca383e783c22da2f2eb03fb8266',1,'ExaDG::Structure::NonLinearOperator']]],
+  ['varies_5fin_5fspace_1',['varies_in_space',['../classExaDG_1_1Utilities_1_1SpatialAwareFunction.html#a16d29f3b654cc8dc40947885851b0800',1,'ExaDG::Utilities::SpatialAwareFunction']]],
+  ['vmult_2',['vmult',['../classExaDG_1_1Elementwise_1_1JacobiPreconditioner.html#a3388ed26e11f59571d3e8ab6e45d7bce',1,'ExaDG::Elementwise::JacobiPreconditioner::vmult()'],['../classExaDG_1_1Elementwise_1_1InverseMassPreconditioner.html#a1f480ae1482708fd0fe5d377fe24e102',1,'ExaDG::Elementwise::InverseMassPreconditioner::vmult()']]]
 ];

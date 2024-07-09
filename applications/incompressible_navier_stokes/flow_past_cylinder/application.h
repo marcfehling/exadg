@@ -25,6 +25,9 @@
 // ExaDG
 #include <exadg/functions_and_boundary_conditions/linear_interpolation.h>
 
+// deal.II
+#include <deal.II/grid/grid_out.h>
+
 // flow past cylinder application
 #include "include/grid.h"
 
@@ -369,6 +372,11 @@ private:
                                                  this->param.mapping_degree,
                                                  this->param.mapping_degree_coarse_grids,
                                                  this->param.involves_h_multigrid());
+
+	// export triangulation
+	dealii::GridOut gridout;
+	std::ofstream 	fstream("flow_past_cylinder.msh");
+	gridout.write_msh(*grid.triangulation, fstream);
   }
 
   void

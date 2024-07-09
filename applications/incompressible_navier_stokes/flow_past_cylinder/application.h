@@ -351,6 +351,11 @@ private:
                                 cylinder_type,
                                 this->param.grid.element_type);
 
+        // export triangulation
+        dealii::GridOut gridout;
+        std::ofstream 	fstream("flow_past_cylinder.msh");
+        gridout.write_msh(*grid.triangulation, fstream);
+
         if(vector_local_refinements.size() > 0)
           refine_local(tria, vector_local_refinements);
 
@@ -372,11 +377,6 @@ private:
                                                  this->param.mapping_degree,
                                                  this->param.mapping_degree_coarse_grids,
                                                  this->param.involves_h_multigrid());
-
-	// export triangulation
-	dealii::GridOut gridout;
-	std::ofstream 	fstream("flow_past_cylinder.msh");
-	gridout.write_msh(*grid.triangulation, fstream);
   }
 
   void
